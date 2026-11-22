@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>告解 · 鼠疫</title>
+<style>
+:root{
+  --ink:#12101a;
+  --stone:#1c1826;
+  --stone2:#2a2436;
+  --amber:#e0a63c;
+  --amber-dim:#8a6526;
+  --fur:#8a6a52;
+  --txt:#cfc6d8;
+  --dim:#6d6478;
+  --line:#3a3248;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--ink);
+  color:var(--txt);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",sans-serif;
+  display:flex;flex-direction:column;
+  font-size:15px;line-height:1.9;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  touch-action:manipulation;
+}
+.px{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;letter-spacing:.06em}
+
+/* ---------- 顶栏 ---------- */
+#bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  border-bottom:2px solid var(--line);
+  background:var(--stone);
+}
+#loc{font-size:10px;color:var(--dim);flex:1}
+#loc b{color:var(--amber-dim);font-weight:400}
+#docBtn{
+  font-size:10px;padding:7px 12px;
+  background:var(--stone2);color:var(--amber);
+  border:2px solid var(--line);cursor:pointer;
+}
+#docBtn:active{background:var(--amber);color:var(--ink)}
+#docBtn .cnt{color:var(--dim)}
+
+/* ---------- 舞台 ---------- */
+#stage{flex:1 1 auto;position:relative;min-height:0;overflow:hidden;cursor:pointer}
+#art{display:block;width:100%;height:100%}
+#vig{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 62% 52% at 50% 44%,transparent 0%,rgba(8,6,12,.55) 62%,rgba(8,6,12,.94) 100%);
+}
+
+/* ---------- 对白 ---------- */
+#dlg{
+  flex:0 0 auto;position:relative;
+  border-top:2px solid var(--line);
+  background:var(--stone);
+  padding:0 16px calc(env(safe-area-inset-bottom) + 16px);
+  min-height:172px;display:flex;flex-direction:column;
+  cursor:pointer;
+}
+#who{
+  align-self:flex-start;transform:translateY(-11px);
+  font-size:11px;padding:4px 12px;
+  background:var(--stone2);border:2px solid var(--line);
+  color:var(--amber);letter-spacing:.14em;
+  visibility:hidden;
+}
+#who.on{visibility:visible}
+#body{flex:1;font-size:15px;min-height:76px;padding-top:2px}
+#body.speech{color:#efe6d4}
+#body.bc{
+  color:var(--amber);letter-spacing:.34em;font-size:16px;
+  text-shadow:0 0 14px rgba(224,166,60,.4);
+  animation:bc .16s steps(2,end) infinite;
+}
+@keyframes bc{0%,100%{transform:translateX(0)}50%{transform:translateX(1px)}}
+#next{
+  align-self:flex-end;color:var(--amber);font-size:11px;
+  opacity:0;animation:blink 1s steps(2,end) infinite;
+}
+#next.on{opacity:1}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.12}}
+
+/* ---------- 选项 ---------- */
+#choices{display:none;flex-direction:column;gap:9px;padding-bottom:4px}
+#choices.on{display:flex}
+.opt{
+  width:100%;text-align:left;
+  padding:14px 14px;font-size:15px;
+  background:var(--stone2);color:var(--txt);
+  border:2px solid var(--line);border-left:5px solid var(--amber-dim);
+  font-family:inherit;cursor:pointer;
+}
+.opt:active{background:var(--amber);color:var(--ink);border-left-color:var(--ink)}
+
+/* ---------- 情报 ---------- */
+#docs{
+  position:fixed;inset:0;z-index:20;display:none;
+  flex-direction:column;background:rgba(9,7,14,.96);
+  padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 18px);
+}
+#docs.on{display:flex}
+#docHd{font-size:11px;color:var(--amber);letter-spacing:.2em;margin-bottom:4px}
+#docSub{font-size:12px;color:var(--dim);margin-bottom:16px}
+#list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;-webkit-overflow-scrolling:touch}
+.doc{
+  padding:13px 14px;background:var(--stone);
+  border:2px solid var(--line);cursor:pointer;text-align:left;
+  font-family:inherit;color:var(--txt);width:100%;
+}
+.doc:active{border-color:var(--amber)}
+.doc .no{font-size:9px;color:var(--amber-dim);display:block;margin-bottom:5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.doc .nm{font-size:15px;display:block;margin-bottom:4px}
+.doc .ds{font-size:12px;color:var(--dim);line-height:1.7}
+#docClose{
+  margin-top:14px;padding:14px;font-size:12px;
+  background:var(--stone2);color:var(--dim);
+  border:2px solid var(--line);font-family:inherit;cursor:pointer;
+}
+#docClose:active{color:var(--amber)}
+
+/* ---------- 结局 ---------- */
+#fin{
+  position:fixed;inset:0;z-index:30;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  background:rgba(9,7,14,.97);padding:32px;
+}
+#fin.on{display:flex}
+#finT{font-size:11px;color:var(--dim);letter-spacing:.3em}
+#finS{font-size:19px;color:var(--amber);text-align:center;line-height:1.8}
+#again{
+  padding:14px 30px;font-size:12px;
+  background:transparent;color:var(--amber);
+  border:2px solid var(--amber-dim);font-family:ui-monospace,Menlo,Consolas,monospace;cursor:pointer;
+}
+#again:active{background:var(--amber);color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){
+  #next,#body.bc{animation:none}
+  #next.on{opacity:1}
+}
+</style>
+
+<style>
+.finActs{display:flex;flex-direction:column;align-items:center;gap:14px}
+a.finNext{padding:13px 26px;font-size:12px;letter-spacing:.16em;text-decoration:none;
+  font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid currentColor;opacity:.95}
+a.finExit{font-size:12px;text-decoration:underline;text-underline-offset:4px;opacity:.7;color:inherit}
+a.exitX{font:10px ui-monospace,Menlo,Consolas,monospace;padding:6px 9px;border:1px solid currentColor;
+  color:inherit;text-decoration:none;opacity:.55;flex:none}
+a.exitX:active{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div id="loc" class="px">CONTAINMENT FACILITY / <b>CONFESSIONAL</b></div>
+  <button id="docBtn" class="px">情报 <span class="cnt">04</span></button>
+  <a class="exit exitX" href="../../index.html#game-zh">✕</a>
+</div>
+
+<div id="stage">
+  <canvas id="art"></canvas>
+  <div id="vig"></div>
+</div>
+
+<div id="dlg">
+  <div id="who" class="px"></div>
+  <div id="body"></div>
+  <div id="choices"></div>
+  <div id="next" class="px">▼ TAP</div>
+</div>
+
+<div id="docs">
+  <div id="docHd" class="px">CASE FILE</div>
+  <div id="docSub">选择一份情报出示。</div>
+  <div id="list"></div>
+  <button id="docClose">收起</button>
+</div>
+
+<div id="fin">
+  <div id="finT" class="px">— END OF SCENE —</div>
+  <div id="finS"></div>
+  <div class="finActs"><button id="again">REPLAY</button><a class="next finNext" style="color:var(--amber)" data-next="3-confession.html" href="3-confession.html">开始第一次告解 ▸</a><a class="exit finExit" href="../../index.html#game-zh">返回作品集</a></div>
+</div>
+
+<script>
+/* ================= 像素立绘 ================= */
+const PAL={
+  '.':null,
+  'K':'#0d0a12', 'D':'#050308', 'B':'#030206',
+  'E':'#e0a63c',
+  'F':'#8a6a52', 'f':'#5e4738', 'W':'#bfa084',
+  'P':'#c98a8a', 'N':'#d99b9b', 'T':'#e8e2d5'
+};
+
+const CLOAK=[
+'.....KKKKKKKKKKKKKKKKKK.....',
+'....KKKKKKKKKKKKKKKKKKKK....',
+'....KKKKKKKKKKKKKKKKKKKK....',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK'
+];
+
+/* 兜帽状态 */
+const HOOD=[
+'............KKKK............',
+'..........KKKKKKKK..........',
+'.........KKKKKKKKKK.........',
+'........KKKKKKKKKKKK........',
+'.......KKKKKKKKKKKKKK.......',
+'......KKKKKKKKKKKKKKKK......',
+'......KKKKKKKKKKKKKKKK......',
+'.....KKKKKKKKKKKKKKKKKK.....',
+'.....KKKKKDDDDDDDDKKKKK.....',
+'.....KKKKDDDDDDDDDDKKKK.....',
+'.....KKKDDDDDDDDDDDDKKK.....',
+'.....KKKDDDEDDDDEDDDKKK.....',
+'.....KKKDDDDDDDDDDDDKKK.....',
+'.....KKKKDDDDDDDDDDKKKK.....',
+'.....KKKKKDDDDDDDDKKKKK.....'
+].concat(CLOAK);
+
+/* 兜帽揭下 · 比黑色更黑 */
+const DARK=[
+'....BBBBB..........BBBBB....',
+'...BBBBBBB........BBBBBBB...',
+'...BBBBBBB........BBBBBBB...',
+'...BBBBBBBB......BBBBBBBB...',
+'....BBBBBBBBBBBBBBBBBBBB....',
+'.....BBBBBBBBBBBBBBBBBB.....',
+'......BBBBBBBBBBBBBBBB......',
+'......BBBBBBBBBBBBBBBB......',
+'......BBBEEBBBBBBEEBBB......',
+'......BBBEEBBBBBBEEBBB......',
+'.......BBBBBBBBBBBBBB.......',
+'........BBBBBBBBBBBB........',
+'.........BBBBBBBBBB.........',
+'..........BBBBBBBB..........',
+'..........BBBBBBBB..........'
+].concat(CLOAK);
+
+/* 真容 · 温和无害的啮齿类 */
+const RAT=[
+'....fffff..........fffff....',
+'...ffPPPff........ffPPPff...',
+'...ffPPPff........ffPPPff...',
+'...ffffffff......ffffffff...',
+'....FFFFFFFFFFFFFFFFFFFF....',
+'.....FFFFFFFFFFFFFFFFFF.....',
+'......FFFFFFFFFFFFFFFF......',
+'......FFFFFFFFFFFFFFFF......',
+'......FFWDDFFFFFFDDWFF......',
+'......FFFDDFFFFFFDDFFF......',
+'.......FFFFFFFFFFFFFF.......',
+'........FFFFFFFFFFFF........',
+'.........WFFFNNFFFW.........',
+'..........WFFNNFFW..........',
+'..........FFFTTFFF..........'
+].concat(CLOAK);
+
+const SPR={hood:HOOD,dark:DARK,rat:RAT};
+const GW=28,GH=HOOD.length;
+const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+
+const cv=document.getElementById('art'),cx=cv.getContext('2d');
+let cur='hood',prev='hood',wipe=1,eyeOpen=true,flick=1,t0=performance.now();
+
+function setSprite(k){
+  if(k===cur)return;
+  prev=cur;cur=k;wipe=0;
+}
+
+function resize(){
+  const st=document.getElementById('stage'),r=st.getBoundingClientRect(),dpr=devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  cx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize',resize);
+
+function draw(now){
+  const dt=now-t0;t0=now;
+  if(wipe<1)wipe=Math.min(1,wipe+dt/620);
+  flick=0.9+Math.sin(now/220)*0.05+Math.sin(now/97)*0.05;
+
+  const w=cv.width/(devicePixelRatio||1),h=cv.height/(devicePixelRatio||1);
+  cx.clearRect(0,0,w,h);
+  cx.fillStyle='#12101a';cx.fillRect(0,0,w,h);
+
+  const ps=Math.max(2,Math.floor(Math.min(w/GW,h/(GH+2))));
+  const ox=Math.floor((w-GW*ps)/2),oy=Math.floor(h-GH*ps);
+
+  /* 极简石壁：两道竖向色带，暗示告解室的隔板 */
+  cx.fillStyle='#171320';
+  cx.fillRect(0,0,w,oy+ps*3);
+  cx.fillStyle='#1b1626';
+  for(let i=0;i<3;i++)cx.fillRect(ox+i*10*ps,0,ps,oy+ps*3);
+  cx.fillStyle='#0e0b14';cx.fillRect(0,oy+ps*3,w,h);
+
+  for(let y=0;y<GH;y++){
+    for(let x=0;x<GW;x++){
+      const useNew=(BAYER[x&3][y&3]+0.5)/16<wipe;
+      let ch=(useNew?SPR[cur]:SPR[prev])[y][x];
+      if(ch==='E'&&!eyeOpen)ch=(cur==='hood'?'D':'B');
+      const c=PAL[ch];
+      if(!c)continue;
+      cx.globalAlpha=(ch==='E')?flick:1;
+      cx.fillStyle=c;
+      cx.fillRect(ox+x*ps,oy+y*ps,ps,ps);
+    }
+  }
+  cx.globalAlpha=1;
+  requestAnimationFrame(draw);
+}
+
+/* 不规则眨眼 */
+(function blink(){
+  const wait=1400+Math.random()*3600;
+  setTimeout(()=>{eyeOpen=false;setTimeout(()=>{eyeOpen=true;blink();},110);},wait);
+})();
+
+/* ================= 情报 ================= */
+const EVIDENCE=[
+  {id:'roster',no:'DOC-01',nm:'收容人员名单',ds:'在册收容体清单。编号、登记名、收容日期。'},
+  {id:'writ',  no:'DOC-02',nm:'EPM 委任状', ds:'伪装身份证明。罗神父，受派驻本所听取告解。'},
+  {id:'map',   no:'DOC-03',nm:'收容所平面图',ds:'告解室、食堂、中庭、收容区 A–C。'},
+  {id:'mary',  no:'DOC-04',nm:'职员履历卡（玛丽）',ds:'见习修女。入所登记：第七年春。'}
+];
+
+/* ================= 剧本 ================= */
+const S={
+start:[
+  {n:'在你面前的是被巨大黑色斗篷包裹严实的一道身影。'},
+  {n:'凭形状甚至看不出来是不是生物。'},
+  {choice:[
+    {label:'……',goto:'leave'},
+    {label:'小心靠近',goto:'near'}
+  ]}
+],
+leave:[
+  {n:'你悄悄离去。'},
+  {n:'与未知之物保持距离。'},
+  {fin:'与未知之物保持距离。'}
+],
+near:[
+  {n:'你迟疑了一下，稍微凑近端详。'},
+  {n:'隐约可以发现一双眼睛，在类似兜帽的布料遮罩下勉强反射出些光亮。'},
+  {c:'？？？',s:'没见过你。谁？'},
+  {n:'没想到对方人类语说得如此标准。但马上反应过来，你作了一番自我介绍。'},
+  /* ↓ 这句在花园里说不出口（见 marie.html「罗格斯的言语边界」）。
+     玛丽承认他为神父之后，同一句才成为可说的。 */
+  {c:'我',s:'我是新上任的神父，从今天开始负责听你们的告解。请多指教。'},
+  {n:'对方顿了顿，不再说话。'},
+  {c:'我',s:'你可以叫我罗神父。你叫什么名字？'},
+  {n:'奇怪地，问出这话后，你能听到从兜帽下方传来细细的笑声。'},
+  {sp:'dark'},
+  {n:'兜帽被一双毛绒的手臂揭下了，露出的面庞比黑色更黑。'},
+  {c:'？？？',s:'神父大人，你可以叫我鼠疫。'},
+  {present:{ok:'roster',goto:'reveal',bad:'……意味不明。你们之间的气氛略有些尴尬。'}}
+],
+reveal:[
+  {n:'你翻开名单，指尖顺着编号一路往下滑。'},
+  {c:'我',s:'这是你的真名？'},
+  {sp:'rat'},
+  {n:'对方的真容显露出来。是一只看着温和无害的啮齿类动物。'},
+  {c:'鼠疫',s:'至少他们曾经是这样称呼我的。'},
+  {bc:'好饿好饿好饿～我真的好饿～'},
+  {n:'你听见奇怪的音乐从广播里传出。眼前的生物两眼放光。'},
+  {c:'鼠疫',s:'开饭了开饭了。神父大人，如果你愿意，我们告解时再细聊。'},
+  {c:'鼠疫',s:'饭点到了，不快点赶过去就麻烦了。我先走了。'},
+  {sp:'hood'},
+  {n:'你没来得及回复，就看到对方重新罩上兜帽，快速遁入阴影之中。'},
+  {fin:'初见 · 结束'}
+]
+};
+
+/* ================= 演出 ================= */
+const $=i=>document.getElementById(i);
+const body=$('body'),who=$('who'),nextI=$('next'),chBox=$('choices');
+let queue=[],typing=false,tm=null,full='',waiting=false,pend=null;
+
+function run(l){queue=S[l].slice();step();}
+
+function step(){
+  if(!queue.length)return;
+  const nd=queue.shift();
+
+  if(nd.sp){setSprite(nd.sp);setTimeout(step,680);return;}
+  if(nd.goto){run(nd.goto);return;}
+  if(nd.fin){finish(nd.fin);return;}
+  if(nd.choice){showChoice(nd.choice);return;}
+  if(nd.present){pend=nd.present;openDocs(true);return;}
+
+  chBox.classList.remove('on');
+  body.className='';
+  if(nd.c){who.textContent=nd.c;who.classList.add('on');body.classList.add('speech');say(nd.s);}
+  else if(nd.bc){who.classList.remove('on');body.classList.add('bc');say(nd.bc);}
+  else{who.classList.remove('on');say(nd.n);}
+}
+
+function say(txt){
+  full=txt;body.textContent='';typing=true;waiting=false;nextI.classList.remove('on');
+  let i=0;clearInterval(tm);
+  tm=setInterval(()=>{
+    body.textContent=full.slice(0,++i);
+    if(i>=full.length){clearInterval(tm);typing=false;waiting=true;nextI.classList.add('on');}
+  },38);
+}
+
+function advance(){
+  if($('docs').classList.contains('on')||$('fin').classList.contains('on'))return;
+  if(typing){clearInterval(tm);body.textContent=full;typing=false;waiting=true;nextI.classList.add('on');return;}
+  if(waiting){waiting=false;nextI.classList.remove('on');step();}
+}
+/* 推进：全局监听。iOS Safari 不会给裸 div 稳定派发 click。*/
+let lastTap=0;
+function onTap(e){
+  const t=e.target;
+  if(!t||!t.closest)return;
+  if(t.closest('#docs')||t.closest('#fin')||t.closest('#choices')||t.closest('#bar'))return;
+  const now=Date.now();
+  if(now-lastTap<260)return;
+  lastTap=now;
+  advance();
+}
+if(window.PointerEvent){
+  document.addEventListener('pointerup',onTap);
+}else{
+  document.addEventListener('touchend',function(e){onTap(e);},{passive:true});
+  document.addEventListener('click',onTap);
+}
+
+function showChoice(opts){
+  waiting=false;nextI.classList.remove('on');
+  chBox.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='opt';b.textContent=o.label;
+    b.onclick=ev=>{ev.stopPropagation();chBox.classList.remove('on');run(o.goto);};
+    chBox.appendChild(b);
+  });
+  chBox.classList.add('on');
+}
+
+/* ---- 情报面板 ---- */
+let selecting=false;
+function openDocs(sel){
+  selecting=!!sel;
+  $('docSub').textContent=sel?'选择一份情报出示。':'目前掌握的情报。';
+  const L=$('list');L.innerHTML='';
+  EVIDENCE.forEach(e=>{
+    const b=document.createElement('button');
+    b.className='doc';
+    b.innerHTML='<span class="no">'+e.no+'</span><span class="nm">'+e.nm+'</span><span class="ds">'+e.ds+'</span>';
+    b.onclick=()=>selecting?present(e):null;
+    L.appendChild(b);
+  });
+  $('docClose').textContent=sel?'再想想':'收起';
+  $('docs').classList.add('on');
+}
+$('docBtn').onclick=()=>{if(!$('fin').classList.contains('on'))openDocs(false);};
+$('docClose').onclick=()=>{
+  $('docs').classList.remove('on');
+  if(selecting){queue.unshift({present:pend});step();}
+};
+
+function present(e){
+  $('docs').classList.remove('on');
+  if(e.id===pend.ok){const g=pend.goto;pend=null;run(g);}
+  else{queue.unshift({present:pend});queue.unshift({n:pend.bad});step();}
+}
+
+/* ---- 结局 ---- */
+function finish(s){
+  nextI.classList.remove('on');
+  $('finS').textContent=s;
+  $('fin').classList.add('on');
+}
+$('again').onclick=()=>{
+  $('fin').classList.remove('on');
+  prev=cur='hood';wipe=1;pend=null;
+  body.textContent='';who.classList.remove('on');
+  run('start');
+};
+
+/* ---- 启动 ---- */
+resize();
+requestAnimationFrame(draw);
+run('start');
+</script>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search),r=q.get('ret')||'game-zh';
+  if(!/^[a-z-]{2,20}$/.test(r))r='game-zh';
+  var L=/-zh$/.test(r)?'返回作品集':/-en$/.test(r)?'Back to the portfolio':'Retour au portfolio';
+  document.querySelectorAll('a.exit').forEach(function(a){a.href='../../index.html#'+r;a.target='_top';
+    if(a.classList.contains('finExit'))a.textContent=L;else a.title=L;});
+  document.querySelectorAll('a.next').forEach(function(a){a.href=a.getAttribute('data-next')+'?ret='+encodeURIComponent(r);});
+})();
+</script>
+</body>
+</html>

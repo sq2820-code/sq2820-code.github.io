@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Confession — Peste</title>
+<style>
+:root{
+  --ink:#12101a;
+  --stone:#1c1826;
+  --stone2:#2a2436;
+  --amber:#e0a63c;
+  --amber-dim:#8a6526;
+  --fur:#8a6a52;
+  --txt:#cfc6d8;
+  --dim:#6d6478;
+  --line:#3a3248;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--ink);
+  color:var(--txt);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  display:flex;flex-direction:column;
+  font-size:14.5px;line-height:1.78;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  touch-action:manipulation;
+}
+.px{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;letter-spacing:.06em}
+
+/* ---------- Barre supérieure ---------- */
+#bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  border-bottom:2px solid var(--line);
+  background:var(--stone);
+}
+#loc{font-size:10px;color:var(--dim);flex:1}
+#loc b{color:var(--amber-dim);font-weight:400}
+#docBtn{
+  font-size:10px;padding:7px 12px;
+  background:var(--stone2);color:var(--amber);
+  border:2px solid var(--line);cursor:pointer;
+}
+#docBtn:active{background:var(--amber);color:var(--ink)}
+#docBtn .cnt{color:var(--dim)}
+
+/* ---------- Scène ---------- */
+#stage{flex:1 1 auto;position:relative;min-height:0;overflow:hidden;cursor:pointer}
+#art{display:block;width:100%;height:100%}
+#vig{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 62% 52% at 50% 44%,transparent 0%,rgba(8,6,12,.55) 62%,rgba(8,6,12,.94) 100%);
+}
+
+/* ---------- Dialogue ---------- */
+#dlg{
+  flex:0 0 auto;position:relative;
+  border-top:2px solid var(--line);
+  background:var(--stone);
+  padding:0 16px calc(env(safe-area-inset-bottom) + 16px);
+  min-height:210px;display:flex;flex-direction:column;
+  cursor:pointer;
+}
+#who{
+  align-self:flex-start;transform:translateY(-11px);
+  font-size:11px;padding:4px 12px;
+  background:var(--stone2);border:2px solid var(--line);
+  color:var(--amber);letter-spacing:.14em;
+  visibility:hidden;
+}
+#who.on{visibility:visible}
+#body{flex:1;font-size:14.5px;min-height:112px;padding-top:2px}
+#body.speech{color:#efe6d4}
+#body.bc{
+  color:var(--amber);letter-spacing:.22em;font-size:15px;
+  text-shadow:0 0 14px rgba(224,166,60,.4);
+  animation:bc .16s steps(2,end) infinite;
+}
+@keyframes bc{0%,100%{transform:translateX(0)}50%{transform:translateX(1px)}}
+#next{
+  align-self:flex-end;color:var(--amber);font-size:11px;
+  opacity:0;animation:blink 1s steps(2,end) infinite;
+}
+#next.on{opacity:1}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.12}}
+
+/* ---------- Choix ---------- */
+#choices{display:none;flex-direction:column;gap:9px;padding-bottom:4px}
+#choices.on{display:flex}
+.opt{
+  width:100%;text-align:left;
+  padding:14px 15px;font-size:14.5px;
+  background:var(--stone2);color:var(--txt);
+  border:2px solid var(--line);border-left:5px solid var(--amber-dim);
+  font-family:inherit;cursor:pointer;
+}
+.opt:active{background:var(--amber);color:var(--ink);border-left-color:var(--ink)}
+
+/* ---------- Dossier ---------- */
+#docs{
+  position:fixed;inset:0;z-index:20;display:none;
+  flex-direction:column;background:rgba(9,7,14,.96);
+  padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 18px);
+}
+#docs.on{display:flex}
+#docHd{font-size:11px;color:var(--amber);letter-spacing:.2em;margin-bottom:4px}
+#docSub{font-size:12px;color:var(--dim);margin-bottom:16px}
+#list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;-webkit-overflow-scrolling:touch}
+.doc{
+  padding:13px 14px;background:var(--stone);
+  border:2px solid var(--line);cursor:pointer;text-align:left;
+  font-family:inherit;color:var(--txt);width:100%;
+}
+.doc:active{border-color:var(--amber)}
+.doc .no{font-size:9px;color:var(--amber-dim);display:block;margin-bottom:5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.doc .nm{font-size:14.5px;display:block;margin-bottom:4px}
+.doc .ds{font-size:12px;color:var(--dim);line-height:1.7}
+#docClose{
+  margin-top:14px;padding:14px;font-size:12px;
+  background:var(--stone2);color:var(--dim);
+  border:2px solid var(--line);font-family:inherit;cursor:pointer;
+}
+#docClose:active{color:var(--amber)}
+
+/* ---------- Fin ---------- */
+#fin{
+  position:fixed;inset:0;z-index:30;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  background:rgba(9,7,14,.97);padding:32px;
+}
+#fin.on{display:flex}
+#finT{font-size:11px;color:var(--dim);letter-spacing:.3em}
+#finS{font-size:17px;color:var(--amber);text-align:center;line-height:1.8}
+#again{
+  padding:14px 30px;font-size:12px;
+  background:transparent;color:var(--amber);
+  border:2px solid var(--amber-dim);font-family:ui-monospace,Menlo,Consolas,monospace;cursor:pointer;
+}
+#again:active{background:var(--amber);color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){
+  #next,#body.bc{animation:none}
+  #next.on{opacity:1}
+}
+</style>
+
+<style>
+.finActs{display:flex;flex-direction:column;align-items:center;gap:14px}
+a.finNext{padding:13px 26px;font-size:12px;letter-spacing:.16em;text-decoration:none;
+  font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid currentColor;opacity:.95}
+a.finExit{font-size:12px;text-decoration:underline;text-underline-offset:4px;opacity:.7;color:inherit}
+a.exitX{font:10px ui-monospace,Menlo,Consolas,monospace;padding:6px 9px;border:1px solid currentColor;
+  color:inherit;text-decoration:none;opacity:.55;flex:none}
+a.exitX:active{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div id="loc" class="px">CENTRE DE CONFINEMENT / <b>CONFESSIONNAL</b></div>
+  <button id="docBtn" class="px">DOSSIER <span class="cnt">04</span></button>
+  <a class="exit exitX" href="../../index.html#game">✕</a>
+</div>
+
+<div id="stage">
+  <canvas id="art"></canvas>
+  <div id="vig"></div>
+</div>
+
+<div id="dlg">
+  <div id="who" class="px"></div>
+  <div id="body"></div>
+  <div id="choices"></div>
+  <div id="next" class="px">▼ TOUCHER</div>
+</div>
+
+<div id="docs">
+  <div id="docHd" class="px">CASE FILE</div>
+  <div id="docSub">Choisissez une pièce à présenter.</div>
+  <div id="list"></div>
+  <button id="docClose">Fermer</button>
+</div>
+
+<div id="fin">
+  <div id="finT" class="px">— FIN DE LA SCÈNE —</div>
+  <div id="finS"></div>
+  <div class="finActs"><button id="again">REJOUER</button><a class="next finNext" style="color:var(--amber)" data-next="../zh/3-confession.html" href="../zh/3-confession.html">Première confession (en chinois) ▸</a><a class="exit finExit" href="../../index.html#game">Retour au portfolio</a></div>
+</div>
+
+<script>
+/* ========= SPRITES PIXEL — 28 x 34, à remplacer par des PNG ========= */
+const PAL={
+  '.':null,
+  'K':'#0d0a12', 'D':'#050308', 'B':'#030206',
+  'E':'#e0a63c',
+  'F':'#8a6a52', 'f':'#5e4738', 'W':'#bfa084',
+  'P':'#c98a8a', 'N':'#d99b9b', 'T':'#e8e2d5'
+};
+
+const CLOAK=[
+'.....KKKKKKKKKKKKKKKKKK.....',
+'....KKKKKKKKKKKKKKKKKKKK....',
+'....KKKKKKKKKKKKKKKKKKKK....',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'...KKKKKKKKKKKKKKKKKKKKKK...',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'..KKKKKKKKKKKKKKKKKKKKKKKK..',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'.KKKKKKKKKKKKKKKKKKKKKKKKKK.',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+'KKKKKKKKKKKKKKKKKKKKKKKKKKKK'
+];
+
+/* ÉTAT 1 — capuche relevée : rien qu'une cape, deux yeux ambrés */
+const HOOD=[
+'............KKKK............',
+'..........KKKKKKKK..........',
+'.........KKKKKKKKKK.........',
+'........KKKKKKKKKKKK........',
+'.......KKKKKKKKKKKKKK.......',
+'......KKKKKKKKKKKKKKKK......',
+'......KKKKKKKKKKKKKKKK......',
+'.....KKKKKKKKKKKKKKKKKK.....',
+'.....KKKKKDDDDDDDDKKKKK.....',
+'.....KKKKDDDDDDDDDDKKKK.....',
+'.....KKKDDDDDDDDDDDDKKK.....',
+'.....KKKDDDEDDDDEDDDKKK.....',
+'.....KKKDDDDDDDDDDDDKKK.....',
+'.....KKKKDDDDDDDDDDKKKK.....',
+'.....KKKKKDDDDDDDDKKKKK.....'
+].concat(CLOAK);
+
+/* ÉTAT 2 — capuche rabattue : silhouette de rat, "plus noire que le noir" */
+const DARK=[
+'....BBBBB..........BBBBB....',
+'...BBBBBBB........BBBBBBB...',
+'...BBBBBBB........BBBBBBB...',
+'...BBBBBBBB......BBBBBBBB...',
+'....BBBBBBBBBBBBBBBBBBBB....',
+'.....BBBBBBBBBBBBBBBBBB.....',
+'......BBBBBBBBBBBBBBBB......',
+'......BBBBBBBBBBBBBBBB......',
+'......BBBEEBBBBBBEEBBB......',
+'......BBBEEBBBBBBEEBBB......',
+'.......BBBBBBBBBBBBBB.......',
+'........BBBBBBBBBBBB........',
+'.........BBBBBBBBBB.........',
+'..........BBBBBBBB..........',
+'..........BBBBBBBB..........'
+].concat(CLOAK);
+
+/* ÉTAT 3 — visage révélé : rongeur doux et inoffensif */
+const RAT=[
+'....fffff..........fffff....',
+'...ffPPPff........ffPPPff...',
+'...ffPPPff........ffPPPff...',
+'...ffffffff......ffffffff...',
+'....FFFFFFFFFFFFFFFFFFFF....',
+'.....FFFFFFFFFFFFFFFFFF.....',
+'......FFFFFFFFFFFFFFFF......',
+'......FFFFFFFFFFFFFFFF......',
+'......FFWDDFFFFFFDDWFF......',
+'......FFFDDFFFFFFDDFFF......',
+'.......FFFFFFFFFFFFFF.......',
+'........FFFFFFFFFFFF........',
+'.........WFFFNNFFFW.........',
+'..........WFFNNFFW..........',
+'..........FFFTTFFF..........'
+].concat(CLOAK);
+
+const SPR={hood:HOOD,dark:DARK,rat:RAT};
+const GW=28,GH=HOOD.length;
+const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+
+const cv=document.getElementById('art'),cx=cv.getContext('2d');
+let cur='hood',prev='hood',wipe=1,eyeOpen=true,flick=1,t0=performance.now();
+
+function setSprite(k){
+  if(k===cur)return;
+  prev=cur;cur=k;wipe=0;
+}
+
+function resize(){
+  const st=document.getElementById('stage'),r=st.getBoundingClientRect(),dpr=devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  cx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize',resize);
+
+function draw(now){
+  const dt=now-t0;t0=now;
+  if(wipe<1)wipe=Math.min(1,wipe+dt/620);
+  flick=0.9+Math.sin(now/220)*0.05+Math.sin(now/97)*0.05;
+
+  const w=cv.width/(devicePixelRatio||1),h=cv.height/(devicePixelRatio||1);
+  cx.clearRect(0,0,w,h);
+  cx.fillStyle='#12101a';cx.fillRect(0,0,w,h);
+
+  const ps=Math.max(2,Math.floor(Math.min(w/GW,h/(GH+2))));
+  const ox=Math.floor((w-GW*ps)/2),oy=Math.floor(h-GH*ps);
+
+  /* Décor minimal : bandes verticales évoquant la cloison du confessionnal */
+  cx.fillStyle='#171320';
+  cx.fillRect(0,0,w,oy+ps*3);
+  cx.fillStyle='#1b1626';
+  for(let i=0;i<3;i++)cx.fillRect(ox+i*10*ps,0,ps,oy+ps*3);
+  cx.fillStyle='#0e0b14';cx.fillRect(0,oy+ps*3,w,h);
+
+  for(let y=0;y<GH;y++){
+    for(let x=0;x<GW;x++){
+      const useNew=(BAYER[x&3][y&3]+0.5)/16<wipe;
+      let ch=(useNew?SPR[cur]:SPR[prev])[y][x];
+      if(ch==='E'&&!eyeOpen)ch=(cur==='hood'?'D':'B');
+      const c=PAL[ch];
+      if(!c)continue;
+      cx.globalAlpha=(ch==='E')?flick:1;
+      cx.fillStyle=c;
+      cx.fillRect(ox+x*ps,oy+y*ps,ps,ps);
+    }
+  }
+  cx.globalAlpha=1;
+  requestAnimationFrame(draw);
+}
+
+/* Clignement irrégulier des yeux */
+(function blink(){
+  const wait=1400+Math.random()*3600;
+  setTimeout(()=>{eyeOpen=false;setTimeout(()=>{eyeOpen=true;blink();},110);},wait);
+})();
+
+/* ================= PIÈCES À CONVICTION ================= */
+const EVIDENCE=[
+  {id:'roster',no:'PIÈCE 01',nm:'Registre des pensionnaires',ds:'Liste des entités confinées. Matricule, nom déclaré, date d\'internement.'},
+  {id:'writ',  no:'PIÈCE 02',nm:'Ordre de mission EPM', ds:'Votre identité d\'emprunt. Père Logos, détaché ici pour recueillir les confessions.'},
+  {id:'map',   no:'PIÈCE 03',nm:'Plan de l\'établissement',ds:'Confessionnal, réfectoire, cour intérieure, zones de confinement A–C.'},
+  {id:'mary',  no:'PIÈCE 04',nm:'Fiche de personnel (Marie)',ds:'Novice. Entrée en service : printemps de la septième année.'}
+];
+
+/* ================= SCÉNARIO ================= */
+const S={
+start:[
+  {n:'Devant vous se dresse une silhouette entièrement enveloppée d\'une immense cape noire.'},
+  {n:'Sa forme ne permet même pas de dire s\'il s\'agit d\'un être vivant.'},
+  {choice:[
+    {label:'……',goto:'leave'},
+    {label:'S\'approcher avec prudence',goto:'near'}
+  ]}
+],
+leave:[
+  {n:'Vous vous éclipsez sans bruit.'},
+  {n:'On garde ses distances avec l\'inconnu.'},
+  {fin:'On garde ses distances avec l\'inconnu.'}
+],
+near:[
+  {n:'Vous hésitez, puis vous vous penchez un peu pour mieux voir.'},
+  {n:'On devine deux yeux qui, sous ce qui ressemble à une capuche, renvoient à peine un peu de lumière.'},
+  {c:'? ? ?',s:'Jamais vu. Qui ?'},
+  {n:'Vous ne vous attendiez pas à un parler humain aussi net. Vous vous ressaisissez et vous présentez.'},
+  {c:'MOI',s:'Je suis le nouveau prêtre. À partir d\'aujourd\'hui, c\'est moi qui recueillerai vos confessions. Enchanté.'},
+  {n:'L\'autre marque un temps, puis se tait.'},
+  {c:'MOI',s:'Vous pouvez m\'appeler père Logos. Et vous, quel est votre nom ?'},
+  {n:'Étrangement, à peine la question posée, un petit rire vous parvient de dessous la capuche.'},
+  {sp:'dark'},
+  {n:'Deux bras couverts de fourrure rabattent la capuche. Le visage qui apparaît est plus noir que le noir.'},
+  {c:'? ? ?',s:'Monsieur le prêtre, vous pouvez m\'appeler Peste.'},
+  {present:{ok:'roster',goto:'reveal',bad:'…Cela n\'a aucun sens. Un léger malaise s\'installe entre vous.'}}
+],
+reveal:[
+  {n:'Vous ouvrez le registre et faites glisser le doigt le long des matricules.'},
+  {c:'MOI',s:'Est-ce là votre vrai nom ?'},
+  {sp:'rat'},
+  {n:'Ses traits se révèlent enfin. Un rongeur à l\'air doux et inoffensif.'},
+  {c:'PESTE',s:'C\'est du moins ainsi qu\'ils m\'appelaient, autrefois.'},
+  {bc:'J\'ai faim j\'ai faim j\'ai faim ~ j\'ai si faim ~'},
+  {n:'Une musique étrange sort des haut-parleurs. Les yeux de la créature s\'illuminent.'},
+  {c:'PESTE',s:'C\'est l\'heure, c\'est l\'heure. Monsieur le prêtre, si vous le voulez bien, nous reparlerons de tout cela en confession.'},
+  {c:'PESTE',s:'Le repas est servi, si je ne me dépêche pas ça va mal tourner. Je file.'},
+  {sp:'hood'},
+  {n:'Vous n\'avez pas le temps de répondre : l\'autre a déjà rabattu sa capuche et s\'est fondu dans l\'ombre.'},
+  {fin:'Première rencontre — fin'}
+]
+};
+
+/* ================= MOTEUR ================= */
+const $=i=>document.getElementById(i);
+const body=$('body'),who=$('who'),nextI=$('next'),chBox=$('choices');
+let queue=[],typing=false,tm=null,full='',waiting=false,pend=null;
+
+function run(l){queue=S[l].slice();step();}
+
+function step(){
+  if(!queue.length)return;
+  const nd=queue.shift();
+
+  if(nd.sp){setSprite(nd.sp);setTimeout(step,680);return;}
+  if(nd.goto){run(nd.goto);return;}
+  if(nd.fin){finish(nd.fin);return;}
+  if(nd.choice){showChoice(nd.choice);return;}
+  if(nd.present){pend=nd.present;openDocs(true);return;}
+
+  chBox.classList.remove('on');
+  body.className='';
+  if(nd.c){who.textContent=nd.c;who.classList.add('on');body.classList.add('speech');say(nd.s);}
+  else if(nd.bc){who.classList.remove('on');body.classList.add('bc');say(nd.bc);}
+  else{who.classList.remove('on');say(nd.n);}
+}
+
+function say(txt){
+  full=txt;body.textContent='';typing=true;waiting=false;nextI.classList.remove('on');
+  let i=0;clearInterval(tm);
+  tm=setInterval(()=>{
+    body.textContent=full.slice(0,++i);
+    if(i>=full.length){clearInterval(tm);typing=false;waiting=true;nextI.classList.add('on');}
+  },22);
+}
+
+function advance(){
+  if($('docs').classList.contains('on')||$('fin').classList.contains('on'))return;
+  if(typing){clearInterval(tm);body.textContent=full;typing=false;waiting=true;nextI.classList.add('on');return;}
+  if(waiting){waiting=false;nextI.classList.remove('on');step();}
+}
+/* Avance : ecoute globale. iOS Safari n'emet pas de click fiable sur un div nu. */
+let lastTap=0;
+function onTap(e){
+  const t=e.target;
+  if(!t||!t.closest)return;
+  if(t.closest('#docs')||t.closest('#fin')||t.closest('#choices')||t.closest('#bar'))return;
+  const now=Date.now();
+  if(now-lastTap<260)return;
+  lastTap=now;
+  advance();
+}
+if(window.PointerEvent){
+  document.addEventListener('pointerup',onTap);
+}else{
+  document.addEventListener('touchend',function(e){onTap(e);},{passive:true});
+  document.addEventListener('click',onTap);
+}
+
+function showChoice(opts){
+  waiting=false;nextI.classList.remove('on');
+  chBox.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='opt';b.textContent=o.label;
+    b.onclick=ev=>{ev.stopPropagation();chBox.classList.remove('on');run(o.goto);};
+    chBox.appendChild(b);
+  });
+  chBox.classList.add('on');
+}
+
+/* ---- Panneau du dossier ---- */
+let selecting=false;
+function openDocs(sel){
+  selecting=!!sel;
+  $('docSub').textContent=sel?'Choisissez une pièce à présenter.':'Pièces en votre possession.';
+  const L=$('list');L.innerHTML='';
+  EVIDENCE.forEach(e=>{
+    const b=document.createElement('button');
+    b.className='doc';
+    b.innerHTML='<span class="no">'+e.no+'</span><span class="nm">'+e.nm+'</span><span class="ds">'+e.ds+'</span>';
+    b.onclick=()=>selecting?present(e):null;
+    L.appendChild(b);
+  });
+  $('docClose').textContent=sel?'Réfléchir encore':'Fermer';
+  $('docs').classList.add('on');
+}
+$('docBtn').onclick=()=>{if(!$('fin').classList.contains('on'))openDocs(false);};
+$('docClose').onclick=()=>{
+  $('docs').classList.remove('on');
+  if(selecting){queue.unshift({present:pend});step();}
+};
+
+function present(e){
+  $('docs').classList.remove('on');
+  if(e.id===pend.ok){const g=pend.goto;pend=null;run(g);}
+  else{queue.unshift({present:pend});queue.unshift({n:pend.bad});step();}
+}
+
+/* ---- Écran de fin ---- */
+function finish(s){
+  nextI.classList.remove('on');
+  $('finS').textContent=s;
+  $('fin').classList.add('on');
+}
+$('again').onclick=()=>{
+  $('fin').classList.remove('on');
+  prev=cur='hood';wipe=1;pend=null;
+  body.textContent='';who.classList.remove('on');
+  run('start');
+};
+
+/* ---- Démarrage ---- */
+resize();
+requestAnimationFrame(draw);
+run('start');
+</script>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search),r=q.get('ret')||'game';
+  if(!/^[a-z-]{2,20}$/.test(r))r='game';
+  var L=/-zh$/.test(r)?'返回作品集':/-en$/.test(r)?'Back to the portfolio':'Retour au portfolio';
+  document.querySelectorAll('a.exit').forEach(function(a){a.href='../../index.html#'+r;a.target='_top';
+    if(a.classList.contains('finExit'))a.textContent=L;else a.title=L;});
+  document.querySelectorAll('a.next').forEach(function(a){a.href=a.getAttribute('data-next')+'?ret='+encodeURIComponent(r);});
+})();
+</script>
+</body>
+</html>
